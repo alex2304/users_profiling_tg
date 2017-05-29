@@ -1,17 +1,15 @@
 from typing import Set
 
-from db import MongoDB, PostgresDB
-
 from models import ChatsEntities, Bot, UserInBot
+from parsing import DataParser
+from parsing import DataUploader
 from telegram import SettingsHolder, TelegramDataLoader
 
 tg_config_file_path = "tg_settings/tg_config"
 target_chats_file_path = "tg_settings/target_chats"
 
 
-# ============= Chats and users ================
-
-def retrieve_chat_entities() -> ChatsEntities:
+def upload_chat_entities():
     # load tg_settings and initialize Telegram client
     settings_holder = SettingsHolder(tg_config_file_path, target_chats_file_path)
     tg_client = TelegramDataLoader(**settings_holder.get_tg_settings())
@@ -22,82 +20,43 @@ def retrieve_chat_entities() -> ChatsEntities:
     return entities
 
 
-def upload_chats_entities(chats_entities: ChatsEntities):
-    db = PostgresDB()
+class DataActions:
+    actions_description = '''
+    Choose what and from what u want to transfer to SQL DB:
+    1 - Static data (bots, chats): from config files
+    2 - Users' data (users, messages, users_in_chats): from Telegram
 
-    db.upload_chats_entities(chats_entities)
+    3 - Users' participation in bots (users_in_bots): from MongoDB
+    4 - Buses clicks data (bus_clicks): from file raw_data
+    5 - Placed ads data (placed_ads): from MongoDB
+    6 - Food orders data (food_orders): from MongoDB
 
-    db.close()
+    0 - Exit
 
+    > '''
 
-# ============= Bots and users ================
+    # parser to parse from different formats
+    parser = DataParser()
+    # uploader for uploading in unified format (sql)
+    uploader = DataUploader()
 
-def retrieve_bots() -> Set[Bot]:
-    db = MongoDB()
+    @staticmethod
+    def perform(action_number: str):
+        if not action_number or not action_number.isdigit():
+            return 'Unknown action number'
 
-    return db.get_bots()
-
-
-def retrieve_users_in_bots() -> Set[UserInBot]:
-    db = MongoDB()
-
-    return db.get_users_in_bots()
-
-
-def upload_bots(bots: Set[Bot]):
-    db = PostgresDB()
-
-    for bot in bots:
-        db.insert_bot(bot)
-
-    db.close()
-
-
-def upload_users_in_bots(users_in_bots: Set[UserInBot]):
-    db = PostgresDB()
-
-    for u_in_bot in users_in_bots:
-        db.insert_user_in_bot(u_in_bot)
-
-    db.close()
-
-
-def upload_food_orders():
-    mongo = MongoDB()
-    relational = PostgresDB()
-
-    food_orders = mongo.get_food_orders()
-
-    for food_order in food_orders:
-        relational.insert_food_order(food_order)
-
-    relational.close()
-
-
-def upload_shuttle_clicks():
-    _from = MongoDB()
-    _to = PostgresDB()
-
-    bus_clicks = _from.get_bus_clicks()
-
-    for bus_click in bus_clicks:
-        _to.insert_bus_click(bus_click)
-
-    _to.close()
-
-
-def upload_placed_ads():
-    _from = MongoDB()
-    _to = PostgresDB()
-
-    placed_ads = _from.get_placed_ads()
-
-    for ad in placed_ads:
-        _to.insert_placed_ad(ad)
-
-    _to.close()
+        return 'Action performed successfully'
 
 
 if __name__ == '__main__':
-    upload_placed_ads()
-    # TODO: place here what you want to perform
+    _menu_text = DataActions.actions_description
+    _user_response = ''
+
+    while True:
+        _user_response = input(_menu_text)
+
+        if _user_response in ('exit', '0'):
+            break
+
+        result_message = DataActions.perform(_user_response)
+        input('\n%s\n(press any key to continue)\n' % result_message)
