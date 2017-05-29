@@ -117,7 +117,8 @@ class FoodOrder(BaseModel):
 
 
 class BusClick(BaseModel):
-    def __init__(self, user_id: int, click_timestamp: datetime, route_id: str, shuttle_id: int, route_start_time: datetime):
+    def __init__(self, user_id: int, click_timestamp: datetime, route_id: str, shuttle_id: int,
+                 route_start_time: datetime):
         super().__init__()
         self.user_id = user_id
         self.click_timestamp = click_timestamp
@@ -133,7 +134,8 @@ class BusClick(BaseModel):
 
 
 class PlacedAd(BaseModel):
-    def __init__(self, user_id: int, placed_timestamp: datetime, category_title: str, ad_type: str, views_count: int, likes_count: int):
+    def __init__(self, user_id: int, placed_timestamp: datetime, category_title: str, ad_type: str,
+                 views_count: int, likes_count: int):
         super().__init__()
         self.user_id = user_id
         self.ad_type = ad_type

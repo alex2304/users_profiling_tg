@@ -1,6 +1,6 @@
 .DS_Store
 .idea
 **/__pycache__
-db/raw_data/*.txt
+parsing/raw_data/*.txt
 telegram/*.session
 telegram/settings
