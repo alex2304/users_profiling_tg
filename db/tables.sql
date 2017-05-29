@@ -99,12 +99,11 @@ CREATE TABLE placed_ads (
   user_id INTEGER,
 
   placed_timestamp TIMESTAMP,
-  section_id VARCHAR(15),   -- rent / lostfound / ...
-  ad_type VARCHAR(15),      -- sell / buy
+  category_title VARCHAR(15),   -- rent / lostfound / ...
+  ad_type VARCHAR(15),          -- sell / buy
+  views_count INTEGER,
   likes_count INTEGER,
 
   PRIMARY KEY (ad_id),
   FOREIGN KEY (user_id) REFERENCES users (local_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-INSERT INTO bots(bot_id, title, members_count) VALUES ($1, $2, $3)

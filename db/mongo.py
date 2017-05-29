@@ -1,12 +1,18 @@
+import json
+import os
+import re
+from datetime import datetime
 from typing import Set, List, Any
 
 from bson import ObjectId
 from pymongo.database import Database
 
-from models import UserInBot, Bot, FoodOrder
+from models import UserInBot, Bot, FoodOrder, PlacedAd
 from pymongo import MongoClient
 
 # Mongo settings
+from models.base_entities import BusClick
+
 mongo_host = 'localhost'
 mongo_port = 27017
 mongo_db_name = 'foodservice'
@@ -20,7 +26,13 @@ bots_names_dbs = {
 }
 
 # Names of the DBs in which the data from a FoodBot are stored
-food_bots_dbs_names = ["matcha", "provip"]
+food_bots_dbs_names = ['matcha', 'provip']
+
+# Name of the DB with shuttles data
+shuttles_db_name = 'shuttles'
+
+# Name of the DB with ads data
+ads_db_name = 'innoads'
 
 
 class MongoDB(object):
@@ -129,3 +141,105 @@ class MongoDB(object):
         category_title = category_object.get('title', {}).get('ru')
 
         return item_title, category_title
+
+    def get_bus_clicks(self) -> List[BusClick]:
+        click_timestamp_format = '%Y-%m-%d %H:%M:%S.%f'
+        bus_clicks_file = os.path.join(os.path.dirname(__file__), 'raw_data/innohelp_clicks.txt')
+        bus_clicks = set()
+
+        # retrieve information about routes from the DB
+        daily_routes_info = self._retrieve_routes_information()
+
+        # process each click action
+        shuttle_clicks = self._read_shuttle_clicks(bus_clicks_file)
+        for click_action in shuttle_clicks:
+            shuttle_id = int(click_action.get('new_value'))
+            user_id = json.loads(click_action.get('filter_options', '{}').replace('\'', '\"')).get('chat_id')
+            click_timestamp = datetime.strptime(click_action.get('dt'), click_timestamp_format)
+
+            click_date = click_action.get('dt').split(' ')[0].replace('-', '/')
+            # get click date for searching in db
+            try:
+                route_id, route_start_timestamp = self._get_route_info(shuttle_id, click_date, daily_routes_info)
+
+            except ValueError as e:
+                print('Missed for (date, shuttle_id): %s %s' % (click_date, shuttle_id))
+
+            else:
+                # add new bus click
+                bus_clicks.add(BusClick(user_id, click_timestamp, route_id, shuttle_id, route_start_timestamp))
+
+        return bus_clicks
+
+    def _retrieve_routes_information(self) -> List[dict]:
+        # retrieve from the DB information about routes at different days
+        _routes_collection = 'schedule'
+
+        # get information (shuttle id and "route" field) about all the dates
+        shuttles_db = self.mongo_client.get_database(shuttles_db_name)
+        daily_routes = shuttles_db.get_collection(_routes_collection).find({})
+
+        return [day_route for day_route in daily_routes]
+
+    @staticmethod
+    def _read_shuttle_clicks(file_path: str):
+        shuttle_click_pattern = re.compile('.*(key = wanted_shuttle_id).*')
+        with open(file_path, 'r') as f:
+            shuttle_clicks = []
+
+            for line in f:
+                if re.match(shuttle_click_pattern, line):
+                    action = dict([tuple(field.split(' = ')) for field in line.split(' | ')])
+                    shuttle_clicks.append(action)
+
+            return shuttle_clicks
+
+    @staticmethod
+    def _get_route_info(shuttle_id: int, date_day: str, daily_routes) -> (str, datetime):
+        """
+        Returns information about route of the given shuttle at the given day
+        :return: (route_id: str, route_start_time: datetime)
+        """
+        _timestamp_template = '%Y/%m/%d %H:%M'
+
+        # find corresponding date_day
+        wanted_day_routes = None
+        for routes_at_day in daily_routes:
+            # if there is a wanted day
+            if routes_at_day.get(date_day):
+                wanted_day_routes = routes_at_day.get(date_day)
+                break
+
+        if wanted_day_routes:
+            for single_route_data in wanted_day_routes:
+                if single_route_data.get('shuttle_id') == shuttle_id:
+                    start_time = single_route_data.get('time')
+                    start_timestamp = datetime.strptime('%s %s' % (date_day, start_time), _timestamp_template)
+
+                    route_id = single_route_data.get('route', {}).get('id')
+
+                    return route_id, start_timestamp
+
+        raise ValueError('Unknown day or shuttle id')
+
+    def get_placed_ads(self) -> List[PlacedAd]:
+        _ads_collection = 'data'
+        _placed_timestamp_format = '%H:%M %d.%m.%Y'
+        placed_ads = set()
+
+        ads_categories = self.mongo_client.get_database(ads_db_name).get_collection(_ads_collection).find_one().get('stories')
+
+        for category in ads_categories:
+            category_title = category.get('section_name')
+            category_content = category.get('content')
+
+            for cat_type_title, cat_type_content in category_content.items():
+                for ad in cat_type_content:
+                    user_id = ad.get('author_id')
+                    likes_count = ad.get('likes')
+                    views_count = ad.get('views', {}).get('count')
+                    placed_timestamp = datetime.strptime(ad.get('datetime'), _placed_timestamp_format)
+
+                    placed_ads.add(PlacedAd(user_id, placed_timestamp, category_title, cat_type_title, views_count, likes_count))
+
+        return placed_ads

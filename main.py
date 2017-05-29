@@ -74,6 +74,30 @@ def upload_food_orders():
     relational.close()
 
 
+def upload_shuttle_clicks():
+    _from = MongoDB()
+    _to = PostgresDB()
+
+    bus_clicks = _from.get_bus_clicks()
+
+    for bus_click in bus_clicks:
+        _to.insert_bus_click(bus_click)
+
+    _to.close()
+
+
+def upload_placed_ads():
+    _from = MongoDB()
+    _to = PostgresDB()
+
+    placed_ads = _from.get_placed_ads()
+
+    for ad in placed_ads:
+        _to.insert_placed_ad(ad)
+
+    _to.close()
+
+
 if __name__ == '__main__':
-    pass
+    upload_placed_ads()
     # TODO: place here what you want to perform

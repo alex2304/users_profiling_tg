@@ -129,7 +129,7 @@ $$ LANGUAGE plpgsql;
 -- replace user_id with local id
 CREATE OR REPLACE FUNCTION insert_bus_click(_user_id INTEGER, _click_timestamp TIMESTAMP, _route_id VARCHAR(50), _route_start_time TIMESTAMP, _shuttle_id INTEGER) RETURNS VOID AS $$
   DECLARE
-    local_user_id INTEGER := (SELECT local_id FROM users WHERE tg_id = user_id);
+    local_user_id INTEGER := (SELECT local_id FROM users WHERE tg_id = _user_id);
   BEGIN
 
     -- check if the user exists
@@ -145,9 +145,9 @@ CREATE OR REPLACE FUNCTION insert_bus_click(_user_id INTEGER, _click_timestamp T
 $$ LANGUAGE plpgsql;
 
 -- replace user_id with local id
-CREATE OR REPLACE FUNCTION insert_placed_ad(_user_id INTEGER, _placed_timestamp TIMESTAMP, _section_id VARCHAR(15), _ad_type VARCHAR(15), _likes_count INTEGER) RETURNS VOID AS $$
+CREATE OR REPLACE FUNCTION insert_placed_ad(_user_id INTEGER, _placed_timestamp TIMESTAMP, _category_title VARCHAR(15), _ad_type VARCHAR(15), _views_count INTEGER, _likes_count INTEGER) RETURNS VOID AS $$
   DECLARE
-    local_user_id INTEGER := (SELECT local_id FROM users WHERE tg_id = user_id);
+    local_user_id INTEGER := (SELECT local_id FROM users WHERE tg_id = _user_id);
   BEGIN
 
     -- check if the user exists
@@ -156,13 +156,13 @@ CREATE OR REPLACE FUNCTION insert_placed_ad(_user_id INTEGER, _placed_timestamp 
       local_user_id := (SELECT local_id FROM users WHERE tg_id = _user_id);
     END IF;
 
-    INSERT INTO placed_ads(user_id, placed_timestamp, section_id, ad_type, likes_count)
-    VALUES (local_user_id, _placed_timestamp, _section_id, _ad_type, _likes_count);
+    INSERT INTO placed_ads(user_id, placed_timestamp, category_title, ad_type, views_count, likes_count)
+    VALUES (local_user_id, _placed_timestamp, _category_title, _ad_type, _views_count, _likes_count);
 
   END;
 $$ LANGUAGE plpgsql;
 
-SELECT * FROM users where last_name = 'Kamsky'
+SELECT count(*) from users;
 
 SELECT * FROM food_orders
 NATURAL JOIN users WHERE users.local_id = food_orders.user_id and users.username = 'marashov_alexey';

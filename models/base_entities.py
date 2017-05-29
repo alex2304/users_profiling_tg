@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Set
 
 # classes which will be imported when using "from . import *"
-__all__ = ["BaseModel", "User", "Chat", "Message", "Bot", "UserInBot", "FoodOrder"]
+__all__ = ["BaseModel", "User", "Chat", "Message", "Bot", "UserInBot", "FoodOrder", "BusClick", "PlacedAd"]
 
 
 class BaseModel:
@@ -114,3 +114,36 @@ class FoodOrder(BaseModel):
 
     def __hash__(self):
         return hash(str(self.user_id) + (self.food_category or 'Unknown_category') + (self.food_item or 'Unknown_item'))
+
+
+class BusClick(BaseModel):
+    def __init__(self, user_id: int, click_timestamp: datetime, route_id: str, shuttle_id: int, route_start_time: datetime):
+        super().__init__()
+        self.user_id = user_id
+        self.click_timestamp = click_timestamp
+        self.route_id = route_id
+        self.shuttle_id = shuttle_id
+        self.route_start_time = route_start_time
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __hash__(self):
+        return hash(str(self.user_id) + str(self.click_timestamp) + str(self.shuttle_id))
+
+
+class PlacedAd(BaseModel):
+    def __init__(self, user_id: int, placed_timestamp: datetime, category_title: str, ad_type: str, views_count: int, likes_count: int):
+        super().__init__()
+        self.user_id = user_id
+        self.ad_type = ad_type
+        self.category_title = category_title
+        self.placed_timestamp = placed_timestamp
+        self.views_count = views_count
+        self.likes_count = likes_count
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __hash__(self):
+        return hash(str(self.user_id) + str(self.placed_timestamp) + str(self.ad_type) + str(self.category_title))
