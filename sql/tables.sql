@@ -3,9 +3,9 @@
 CREATE TABLE users (
   local_id SERIAL,
   tg_id INTEGER UNIQUE,
-  first_name VARCHAR(75),
-  last_name VARCHAR(75),
-  username VARCHAR(75),
+  first_name VARCHAR(250),
+  last_name VARCHAR(250),
+  username VARCHAR(250),
 
   PRIMARY KEY (local_id)
 );
@@ -15,6 +15,8 @@ CREATE TABLE chats (
   chat_id INTEGER,
   title VARCHAR(100),
   members_count INTEGER,
+  messages_count INTEGER,
+  creation_date TIMESTAMP,
 
   PRIMARY KEY (chat_id)
 );
@@ -23,8 +25,9 @@ CREATE TABLE chats (
 CREATE TABLE users_in_chats (
   chat_id INTEGER,
   user_id INTEGER,
-  since DATE,
-  is_admin BOOL,
+  entering_diff FLOAT,          -- difference between chat entering and chat creation (in seconds)
+  avg_msg_frequency FLOAT,      -- average message frequency (messages/day) (for any types of messages)
+  avg_msg_length FLOAT,         -- average messages length (only for text messages)
 
   PRIMARY KEY (chat_id, user_id),
   FOREIGN KEY (chat_id) REFERENCES chats (chat_id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -55,8 +58,8 @@ CREATE TABLE users_in_bots (
 -- check message length
 CREATE TABLE messages (
   msg_id INTEGER,
-  text VARCHAR(500) NOT NULL,
-  date VARCHAR(50),
+  text VARCHAR(500) NOT NULL,         -- only text messages shorter than 500 symbols
+  date TIMESTAMP,
   chat_id INTEGER,
   user_id INTEGER,
 

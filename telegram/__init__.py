@@ -1,1 +1,1 @@
-from .telegram_client import TelegramDataLoader, SettingsHolder
+from .telegram_client import TgClient, SettingsHolder

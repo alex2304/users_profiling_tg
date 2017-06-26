@@ -1,37 +1,18 @@
 import json
-import os
 import re
 from datetime import datetime
+from getpass import getpass
 from typing import Set, List, Any
+
 from bson import ObjectId
-from pymongo.database import Database
 from pymongo import MongoClient
+from pymongo.database import Database
 
+from models import ChatsEntities
 from models import UserInBot, Bot, FoodOrder, BusClick, PlacedAd
-
-
-class Settings:
-    # Mongo settings to connect
-    mongo_host = 'localhost'
-    mongo_port = 27017
-
-    # Mapping of bots' names to databases in Mongo
-    bots_names_dbs = {
-        'InnoHelpBot': 'shuttles',
-        'InnoAdsBot': 'innoads',
-        'GeekCaffeeBot': 'matcha',
-        'InnoEdaBot': 'provip'
-    }
-
-    # Names of the DBs in which the data from a FoodBot are stored
-    food_bots_dbs_names = [bots_names_dbs.get('GeekCaffeeBot'), bots_names_dbs.get('InnoEdaBot')]
-
-    # Name of the DB with shuttles data
-    shuttles_db_name = bots_names_dbs.get('InnoHelpBot')
-    shuttles_clicks_filename = os.path.join(os.path.dirname(__file__), 'raw_data/innohelp_clicks.txt')
-
-    # Name of the DB with ads data
-    ads_db_name = bots_names_dbs.get('InnoAdsBot')
+from telegram import SettingsHolder
+from telegram import TgClient
+from .settings import Settings
 
 
 class DataParser:
@@ -39,6 +20,25 @@ class DataParser:
 
     def __init__(self):
         self.mongo_client = MongoClient(Settings.mongo_host, int(Settings.mongo_port))
+
+    @classmethod
+    def get_chat_entities(cls) -> ChatsEntities:
+        # load tg_settings and initialize Telegram client
+        tg_client = TgClient(debug_mode=True, **SettingsHolder(Settings.tg_config_file_path).get_settings_dict())
+
+        if not tg_client.authorized():
+            if not tg_client.enter_code(input('Enter Telegram code: ')):
+                if not tg_client.enter_password(getpass('Enter Telegram password (two-step verification is enabled')):
+                    raise ValueError('Error authorizing in Telegram')
+
+        # read information about
+        with open(Settings.target_chats_file_path, 'r', encoding='utf-8') as f:
+            chats_titles = [title.replace('\n', '') for title in f if not title.startswith('#')]
+
+        # download information about chats
+        entities = tg_client.get_chats_entities(chats_titles)
+
+        return entities
 
     def get_bots(self) -> Set[Bot]:
         """
@@ -230,7 +230,7 @@ class DataParser:
 
         raise ValueError('Unknown day or shuttle id')
 
-    def get_placed_ads(self) -> List[PlacedAd]:
+    def get_placed_ads(self) -> Set[PlacedAd]:
         """
         Scans database specified in Settings.ads_db_name
         :return: all the placed ads gathered from the ads database

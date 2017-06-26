@@ -1,6 +1,5 @@
 .DS_Store
 .idea
 **/__pycache__
-parsing/raw_data/*.txt
-telegram/*.session
-telegram/settings
+data/transferring/raw_data/*
+telegram/sessions/*.session

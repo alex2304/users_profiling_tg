@@ -1,2 +1,2 @@
 from .base_entities import *
-from .complex_entitites import ChatsEntities
+from .complex_entitites import UserInChat, ChatsEntities

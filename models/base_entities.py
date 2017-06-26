@@ -1,21 +1,40 @@
+import json
 from abc import abstractmethod
 from datetime import datetime
 from typing import Set
 
 # classes which will be imported when using "from . import *"
-__all__ = ["BaseModel", "User", "Chat", "Message", "Bot", "UserInBot", "FoodOrder", "BusClick", "PlacedAd"]
+import pickle
+
+__all__ = ["BaseEntity", "User", "Chat", "Message", "Bot", "UserInBot", "FoodOrder", "BusClick", "PlacedAd"]
 
 
-class BaseModel:
+class BaseEntity:
 
     def __init__(self):
         self.__dict__ = {}
 
+    # TODO: add try/except
     def serialize(self):
-        return self.__dict__
+        return pickle.dumps(self)
+        # return self.__dict__
 
     def deserialize(self, _json):
-        self.__dict__ = _json
+        self.__dict__ = pickle.loads(_json).__dict__
+        # self.__dict__ = _json
+
+    def from_file(self, filename):
+        # self.deserialize(
+        #     json.load(
+        #         open(filename, 'r', encoding='utf-8')
+        #     )
+        # )
+        self.__dict__ = pickle.load(open(filename, 'rb')).__dict__
+
+    def to_file(self, filename):
+        # with open(filename, 'w', encoding='utf-8') as f:
+        with open(filename, 'wb') as f:
+            f.write(self.serialize())
 
     @abstractmethod
     def __eq__(self, other):
@@ -26,7 +45,7 @@ class BaseModel:
         pass
 
 
-class User (BaseModel):
+class User(BaseEntity):
     def __init__(self, uid: int, first_name: str, last_name: str=None, username: str=None):
         super().__init__()
         self.last_name = last_name
@@ -41,13 +60,15 @@ class User (BaseModel):
         return self.uid
 
 
-class Chat(BaseModel):
-    def __init__(self, cid: int, title: str, members_count: int, users_ids: Set[int]):
+class Chat(BaseEntity):
+    def __init__(self, cid: int, title: str, members_count: int, messages_count: int, creation_date: datetime):
         super().__init__()
-        self.users_ids = list(users_ids)
+        self.cid = cid
         self.title = title
         self.members_count = members_count
-        self.cid = cid
+        self.messages_count = messages_count
+
+        self.creation_date = creation_date
 
     def __eq__(self, other):
         return other.cid == self.cid
@@ -56,12 +77,12 @@ class Chat(BaseModel):
         return self.cid
 
 
-class Message(BaseModel):
-    def __init__(self, msg_id: int, text: str, date: int, author_id: int, chat_id: int):
+class Message(BaseEntity):
+    def __init__(self, msg_id: int, text: str, date: datetime, author_id: int, chat_id: int):
         super().__init__()
         self.chat_id = chat_id
         self.author_id = author_id
-        self.date = str(date)
+        self.date = date
         self.text = text
         self.msg_id = msg_id
 
@@ -72,7 +93,7 @@ class Message(BaseModel):
         return int(str(self.chat_id) + str(self.author_id) + str(self.msg_id))
 
 
-class Bot(BaseModel):
+class Bot(BaseEntity):
 
     def __init__(self, title: str, members_count: int):
         super().__init__()
@@ -86,7 +107,7 @@ class Bot(BaseModel):
         return hash(self.title)
 
 
-class UserInBot(BaseModel):
+class UserInBot(BaseEntity):
     def __init__(self, bot_title: str, user_id: int, lang: str):
         super().__init__()
         self.lang = lang
@@ -100,7 +121,7 @@ class UserInBot(BaseModel):
         return hash(self.bot_title + str(self.user_id))
 
 
-class FoodOrder(BaseModel):
+class FoodOrder(BaseEntity):
     def __init__(self, user_id: int, food_category: str, food_item: str, quantity: int, timestamp: datetime):
         super().__init__()
         self.user_id = user_id
@@ -116,7 +137,7 @@ class FoodOrder(BaseModel):
         return hash(str(self.user_id) + (self.food_category or 'Unknown_category') + (self.food_item or 'Unknown_item'))
 
 
-class BusClick(BaseModel):
+class BusClick(BaseEntity):
     def __init__(self, user_id: int, click_timestamp: datetime, route_id: str, shuttle_id: int,
                  route_start_time: datetime):
         super().__init__()
@@ -133,7 +154,7 @@ class BusClick(BaseModel):
         return hash(str(self.user_id) + str(self.click_timestamp) + str(self.shuttle_id))
 
 
-class PlacedAd(BaseModel):
+class PlacedAd(BaseEntity):
     def __init__(self, user_id: int, placed_timestamp: datetime, category_title: str, ad_type: str,
                  views_count: int, likes_count: int):
         super().__init__()
