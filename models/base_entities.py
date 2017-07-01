@@ -46,7 +46,7 @@ class BaseEntity:
 
 
 class User(BaseEntity):
-    def __init__(self, uid: int, first_name: str, last_name: str=None, username: str=None):
+    def __init__(self, uid: int, first_name: str, last_name: str=None, username: str=None, **other):
         super().__init__()
         self.last_name = last_name
         self.first_name = first_name

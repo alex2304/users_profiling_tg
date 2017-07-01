@@ -171,3 +171,7 @@ SELECT * FROM users WHERE local_id = 9966;
 SELECT * FROM users WHERE tg_id = 5997097;
 SELECT count(*) FROM users WHERE first_name = 'was invited';
 SELECT SUM(messages_count) FROM chats;
+
+-- participation in chats
+SELECT DISTINCT us.tg_id, chat_id, 1 as participation FROM users_in_chats us_chats
+INNER JOIN users us ON us.local_id = us_chats.user_id;

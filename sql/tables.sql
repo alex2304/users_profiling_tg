@@ -110,3 +110,11 @@ CREATE TABLE placed_ads (
   PRIMARY KEY (ad_id),
   FOREIGN KEY (user_id) REFERENCES users (local_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+CREATE TABLE users_genders (
+  user_id INTEGER,
+  gender CHAR(1),
+
+  PRIMARY KEY (user_id),
+  FOREIGN KEY (user_id) REFERENCES users (local_id) ON DELETE CASCADE ON UPDATE CASCADE
+);

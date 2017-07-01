@@ -181,3 +181,44 @@ class DataUploader:
         except Error as e:
             print(e)
             raise Exception('Error clearing table %s' % table_title)
+
+    def get_users_in_chats(self):
+        schema = 'chat_id', 'user_id', 'entering_difference', 'avg_msg_frequency', 'avg_msg_length'
+        tuples = self.db.query('SELECT * FROM users_in_chats')
+
+        for t in tuples:
+            yield UserInChat(**dict(zip(schema, t)))
+
+    def get_users_in_bots(self):
+        schema = 'bot_title', 'user_id', 'lang'
+        tuples = self.db.query('SELECT * FROM users_in_bots')
+
+        for t in tuples:
+            yield UserInBot(**dict(zip(schema, t)))
+
+    def get_chats(self):
+        schema = 'cid', 'title', 'members_count', 'messages_count', 'creation_date'
+        tuples = self.db.query('SELECT * FROM chats')
+
+        for t in tuples:
+            yield Chat(**dict(zip(schema, t)))
+
+    def get_users(self):
+        # miss 'tg_id' field
+        schema = 'uid', 'tg_id', 'first_name', 'last_name', 'username'
+        tuples = self.db.query('SELECT * FROM users')
+
+        for t in tuples:
+            yield User(**dict(zip(schema, t)))
+
+    def get_bots(self):
+        schema = 'title', 'members_count'
+        tuples = self.db.query('SELECT * FROM bots')
+
+        for t in tuples:
+            yield Bot(**dict(zip(schema, t)))
+
+if __name__ == '__main__':
+    uploader = DataUploader()
+
+    u = uploader.get_users_in_chats()
