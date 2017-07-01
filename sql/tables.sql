@@ -118,3 +118,11 @@ CREATE TABLE users_genders (
   PRIMARY KEY (user_id),
   FOREIGN KEY (user_id) REFERENCES users (local_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+CREATE TABLE predicted_genders (
+  user_id INTEGER,
+  gender CHAR(1),
+
+  PRIMARY KEY (user_id),
+  FOREIGN KEY (user_id) REFERENCES users (local_id) ON DELETE CASCADE ON UPDATE CASCADE
+);

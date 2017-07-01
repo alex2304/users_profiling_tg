@@ -1,10 +1,7 @@
-import json
+import pickle
+import re
 from abc import abstractmethod
 from datetime import datetime
-from typing import Set
-
-# classes which will be imported when using "from . import *"
-import pickle
 
 __all__ = ["BaseEntity", "User", "Chat", "Message", "Bot", "UserInBot", "FoodOrder", "BusClick", "PlacedAd"]
 
@@ -46,12 +43,33 @@ class BaseEntity:
 
 
 class User(BaseEntity):
+    _name_pattern = re.compile('[a-zA-Zа-яА-Я]{3,30}')
+    _names = {
+        'm': ['alex', 'marat', 'adel', 'aidar', 'akhmed', 'albert', 'aleksandr', 'aleksander' 'aleksey', 'aleksei', 'alex', 'alexey', 'andrew', 'andrey', 'nikita', 'sergey', 'andrey', 'dmitry', 'timur', 'anton', 'ivan', 'marat', 'ilya', 'maxim', 'pavel', 'ruslan', 'denis', 'bulat', 'igor', 'konstantin', 'aleksandr', 'николай', 'константин', 'artem', 'roman', 'oleg', 'евгений', 'kirill', 'ildar', 'artur', 'vladimir', 'azat', 'артур', 'михаил', 'mikhail', 'albert', 'альберт', 'yuriy', 'иван', 'rustam', 'arthur', 'вадим', 'aidar', 'danil', 'emil', 'ильнур', 'dmitriy', 'damir', 'роман', 'sergei', 'mike', 'bogdan', 'vlad', 'kamil', 'ildar', 'iskander', 'григорий', 'denis', 'денис', 'айдар', 'алексей', 'александр', 'андрей', 'vadim', 'evgeniy', 'сергей', 'максим', 'илья', 'айрат', 'ильдар', 'руслан', 'никита', 'vitaliy', 'булат', 'victor', 'lev', 'rafel', 'yuri'],
+        'f': ['александра', 'лилия', 'aida', 'aigul', 'ainur', 'svetlana', 'albina', 'alena', 'alenka', 'alexandra', 'anastasia', 'anna', 'ekaterina', 'татьяна', 'svetlana', 'irina', 'ирина', 'светлана', 'marina', 'elena', 'diana', 'tatyana', 'ольга', 'maria', 'мария', 'анастасия', 'юлия', 'наталья', 'daria', 'дарья', 'julia', 'alena', 'алёна', 'alina', 'алсу', 'айгуль', 'liliya', 'оксана', 'inna', 'alisa', 'ирина', 'наталья', 'наталия', 'алия', 'диляра', 'dilyara', 'natalia', 'tanya', 'eugene', 'lena', 'regina', 'kate', 'katya', 'aigul', 'vera', 'veronika', 'regina', 'регина', 'вероника', 'tatiana', 'марина', 'dasha', 'гузель', 'диана', 'oksana', 'darya', 'gulnara', 'margarita', 'anastasiia', 'елена', 'алина', 'aliya', 'alsu', 'luiza', 'liana', 'angelina', 'albina', 'катерина', 'victoriya', 'ksenia', 'gulnaz', 'natali', 'natalya']
+    }
+
     def __init__(self, uid: int, first_name: str, last_name: str=None, username: str=None, **other):
         super().__init__()
         self.last_name = last_name
         self.first_name = first_name
         self.uid = uid
         self.username = username
+
+    def get_gender(self):
+        name_str = ' '.join([self.first_name or '', self.last_name or '', self.username or ''])
+
+        for name_part in name_str.split(' '):
+            if re.match(self._name_pattern, name_part):
+                lower_name = name_part.lower()
+                if lower_name in self._names['m']:
+                    return 'm'
+
+                elif lower_name in self._names['f']:
+                    return 'f'
+
+                else:
+                    return 'u'
 
     def __eq__(self, other):
         return other.uid == self.uid

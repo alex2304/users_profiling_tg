@@ -175,3 +175,22 @@ SELECT SUM(messages_count) FROM chats;
 -- participation in chats
 SELECT DISTINCT us.tg_id, chat_id, 1 as participation FROM users_in_chats us_chats
 INNER JOIN users us ON us.local_id = us_chats.user_id;
+
+SELECT ufnc.f, ufnc.c FROM (
+SELECT u.first_name as f, COUNT(*) as c
+FROM users u
+GROUP BY u.first_name) as ufnc
+ORDER BY c DESC ;
+
+SELECT COUNT(*), u.first_name as f_name FROM users_genders g
+  INNER JOIN users u ON u.local_id = g.user_id
+WHERE gender = 'u'
+GROUP BY u.first_name;
+
+SELECT COUNT(*) FROM users_genders g
+  INNER JOIN users u ON u.local_id = g.user_id
+WHERE gender = 'f';
+
+SELECT first_name, last_name, username FROM predicted_genders p_g
+INNER JOIN users u ON u.local_id = p_g.user_id
+WHERE p_g.gender = 'm';

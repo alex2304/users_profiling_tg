@@ -1,6 +1,7 @@
 from typing import List
 
 import postgresql
+import re
 from postgresql.exceptions import Error
 
 from models import User, Chat, Message, ChatsEntities, Bot, UserInBot, FoodOrder, BusClick, PlacedAd, BaseEntity
@@ -30,6 +31,9 @@ class DataUploader:
         self._insert_food_order = self.db.prepare('SELECT * FROM insert_food_order($1, $2, $3, $4, $5)')
         self._insert_bus_click = self.db.prepare('SELECT * FROM insert_bus_click($1, $2, $3, $4, $5)')
         self._insert_placed_ad = self.db.prepare('SELECT * FROM insert_placed_ad($1, $2, $3, $4, $5, $6)')
+
+        self._insert_user_gender = self.db.prepare('INSERT INTO users_genders VALUES ($1, $2)')
+        self._insert_predicted_gender = self.db.prepare('INSERT INTO predicted_genders VALUES ($1, $2)')
 
     def __del__(self):
         self.db.close()
@@ -186,8 +190,7 @@ class DataUploader:
         schema = 'chat_id', 'user_id', 'entering_difference', 'avg_msg_frequency', 'avg_msg_length'
         tuples = self.db.query('SELECT * FROM users_in_chats')
 
-        for t in tuples:
-            yield UserInChat(**dict(zip(schema, t)))
+        return [UserInChat(**dict(zip(schema, t))) for t in tuples]
 
     def get_users_in_bots(self):
         schema = 'bot_title', 'user_id', 'lang'
@@ -218,7 +221,24 @@ class DataUploader:
         for t in tuples:
             yield Bot(**dict(zip(schema, t)))
 
+    def upload_users_genders(self):
+        users = self.get_users()
+
+        for user in users:
+            self._insert_user_gender(user.uid, user.get_gender())
+
+    def get_user_genders(self):
+        tuples = self.db.query('SELECT * FROM users_genders')
+
+        return {t[0]: t[1] for t in tuples}
+
+    def save_predicted_genders(self, users_genders):
+        self.db.execute('DELETE FROM predicted_genders *;')
+
+        for user_id, gender in users_genders.items():
+            self._insert_predicted_gender(user_id, gender)
+
 if __name__ == '__main__':
     uploader = DataUploader()
 
-    u = uploader.get_users_in_chats()
+    uploader.upload_users_genders()

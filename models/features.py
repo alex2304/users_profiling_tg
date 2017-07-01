@@ -1,5 +1,3 @@
-from abc import abstractmethod
-
 import functools
 
 
@@ -11,7 +9,7 @@ class UserFeatures:
         self._class = _class
 
         for f in features:
-            if isinstance(f, list):
+            if isinstance(f, list) or isinstance(f, tuple):
                 self._features.extend(f)
 
             else:
@@ -22,6 +20,9 @@ class UserFeatures:
 
     def class_value(self):
         return self._class
+
+    def set_class(self, _class):
+        self._class = _class
 
 
 @functools.total_ordering
