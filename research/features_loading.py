@@ -3,8 +3,8 @@ from typing import Tuple, List
 from data.transferring import DataUploader
 from models import FeaturesFromBot
 from models import FeaturesFromChat
+from models import UserClass
 from models import UserFeatures
-from models.classes import UserClass
 
 
 class FeaturesLoader(DataUploader):

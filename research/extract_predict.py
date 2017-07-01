@@ -4,6 +4,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectPercentile
 from sklearn.feature_selection import f_classif
 
+from data.transferring import DataUploader
+from models import Prediction
 from models import UserClass
 from models import UserFeatures
 from research.features_loading import FeaturesLoader
@@ -17,7 +19,7 @@ class Classifier:
         # threshold = .8
         # self.selector = VarianceThreshold(threshold=(threshold * (1 - threshold)))
 
-    def study_model(self, features: List[UserFeatures]):
+    def study_model(self, features: List[UserFeatures]=None, from_file: bool=None):
         x, y = self._features_to_xy(features)
 
         self.classifier.fit(x, y)
@@ -58,17 +60,38 @@ def main():
     f_loader = FeaturesLoader()
     classifier = Classifier()
 
-    # unknown = [[0, 1, 1],
-    #             [1, 0, 0]]
+    # update pre-classified info about known user genders
+    f_loader.upload_users_genders()
+
+    # get features of user with known and unknown genders
     known, unknown = f_loader.get_all_users_features()
 
-    # x = classifier.extract_features(x, y)
-    classifier.study_model(known)
+    # define features for studying and for prediction
+    for_study, for_prediction = known[:-5], known[-10:]
 
-    predicted = classifier.predict(unknown)
+    # study model
+    classifier.study_model(features=for_study)
 
-    f_loader.save_predicted_genders({f.user_id: f.gender_letter for f in predicted})
+    # predict classes and create Prediction objects
+    predicted_classes = classifier.predict(for_prediction)
+    predictions = [Prediction(_class, features) for features, _class in zip(for_prediction, predicted_classes)]
 
+    # save predicted genders to SQL table
+    f_loader.save_predicted_genders(predictions)
+
+    # display statistics
+    correct_predictions = 0
+    for number, p in enumerate(predictions, 1):
+        print('%d) Real: %s; Predicted: %s; RESULT: %s' % (number,
+                                                           str(p.real_class()),
+                                                           str(p.predicted_class()),
+                                                           str(p.is_right()).upper()))
+        if p.is_right():
+            correct_predictions += 1
+
+    print('\n\nCorrect predictions: %d%% (%d out of %d)' % (correct_predictions * 100 / len(predictions),
+                                                            correct_predictions,
+                                                            len(predictions)))
 
 if __name__ == '__main__':
     main()

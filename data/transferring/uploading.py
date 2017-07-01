@@ -4,6 +4,7 @@ import postgresql
 import re
 from postgresql.exceptions import Error
 
+from models import Prediction
 from models import User, Chat, Message, ChatsEntities, Bot, UserInBot, FoodOrder, BusClick, PlacedAd, BaseEntity
 
 # address to connect
@@ -33,7 +34,7 @@ class DataUploader:
         self._insert_placed_ad = self.db.prepare('SELECT * FROM insert_placed_ad($1, $2, $3, $4, $5, $6)')
 
         self._insert_user_gender = self.db.prepare('INSERT INTO users_genders VALUES ($1, $2)')
-        self._insert_predicted_gender = self.db.prepare('INSERT INTO predicted_genders VALUES ($1, $2)')
+        self._insert_predicted_gender = self.db.prepare('INSERT INTO predicted_genders VALUES ($1, $2, $3)')
 
     def __del__(self):
         self.db.close()
@@ -222,6 +223,7 @@ class DataUploader:
             yield Bot(**dict(zip(schema, t)))
 
     def upload_users_genders(self):
+        self.db.execute('DELETE FROM users_genders *;')
         users = self.get_users()
 
         for user in users:
@@ -232,13 +234,8 @@ class DataUploader:
 
         return {t[0]: t[1] for t in tuples}
 
-    def save_predicted_genders(self, users_genders):
+    def save_predicted_genders(self, predictions: List[Prediction]):
         self.db.execute('DELETE FROM predicted_genders *;')
 
-        for user_id, gender in users_genders.items():
-            self._insert_predicted_gender(user_id, gender)
-
-if __name__ == '__main__':
-    uploader = DataUploader()
-
-    uploader.upload_users_genders()
+        for p in predictions:
+            self._insert_predicted_gender(p.user_id(), p.real_class(), p.predicted_class())

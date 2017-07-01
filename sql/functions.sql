@@ -161,11 +161,9 @@ CREATE OR REPLACE FUNCTION insert_placed_ad(_user_id INTEGER, _placed_timestamp 
   END;
 $$ LANGUAGE plpgsql;
 
-SELECT count(*) from users;
-
+-- test requests
 SELECT * FROM food_orders
 NATURAL JOIN users WHERE users.local_id = food_orders.user_id and users.username = 'marashov_alexey';
-
 SELECT user_id, food_category, food_item from food_orders;
 SELECT * FROM users WHERE local_id = 9966;
 SELECT * FROM users WHERE tg_id = 5997097;
@@ -176,21 +174,19 @@ SELECT SUM(messages_count) FROM chats;
 SELECT DISTINCT us.tg_id, chat_id, 1 as participation FROM users_in_chats us_chats
 INNER JOIN users us ON us.local_id = us_chats.user_id;
 
+-- the most frequent names
 SELECT ufnc.f, ufnc.c FROM (
 SELECT u.first_name as f, COUNT(*) as c
 FROM users u
 GROUP BY u.first_name) as ufnc
 ORDER BY c DESC ;
 
+-- check which users have undefined gender
 SELECT COUNT(*), u.first_name as f_name FROM users_genders g
   INNER JOIN users u ON u.local_id = g.user_id
 WHERE gender = 'u'
 GROUP BY u.first_name;
 
-SELECT COUNT(*) FROM users_genders g
-  INNER JOIN users u ON u.local_id = g.user_id
-WHERE gender = 'f';
-
-SELECT first_name, last_name, username FROM predicted_genders p_g
-INNER JOIN users u ON u.local_id = p_g.user_id
-WHERE p_g.gender = 'm';
+-- check results of the last gender prediction
+SELECT first_name, last_name, username, real_gender, predicted_gender FROM predicted_genders p_g
+INNER JOIN users u ON u.local_id = p_g.user_id;
