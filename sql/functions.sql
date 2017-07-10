@@ -181,6 +181,10 @@ FROM users u
 GROUP BY u.first_name) as ufnc
 ORDER BY c DESC ;
 
+-- check how many users with specified gender(s)
+SELECT COUNT(*) FROM users_genders g
+WHERE gender = 'u';
+
 -- check which users have undefined gender
 SELECT COUNT(*), u.first_name as f_name FROM users_genders g
   INNER JOIN users u ON u.local_id = g.user_id

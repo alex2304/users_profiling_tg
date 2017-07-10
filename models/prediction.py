@@ -1,5 +1,7 @@
 import functools
 
+import math
+
 
 class UserFeatures:
     def __init__(self, user_id, _class, *features):
@@ -80,7 +82,7 @@ class FeaturesFromChat(Features):
     def __cmp__(self, other):
         pass
 
-    def __init__(self, chat_id, participation, freq=-1, length=-1, diff=-1):
+    def __init__(self, chat_id, participation, freq=0, length=0, diff=0):
         super().__init__(participation, freq, length, diff)
 
         self.chat_id = chat_id
@@ -108,7 +110,7 @@ class UserClass:
     _genders = {
         'f': 0,
         'm': 1,
-        'u': -1
+        'u': 2
     }
 
     def _resolve_letter(self, gender_value):

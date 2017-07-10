@@ -1,13 +1,10 @@
 from typing import List
 
 import postgresql
-import re
 from postgresql.exceptions import Error
 
 from models import Prediction
 from models import User, Chat, Message, ChatsEntities, Bot, UserInBot, FoodOrder, BusClick, PlacedAd, BaseEntity
-
-# address to connect
 from models import UserInChat
 
 postgres_db_address = 'pq://postgres:postgres@localhost:5432/Telegram Data'

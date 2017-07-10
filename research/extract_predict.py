@@ -1,10 +1,14 @@
 import os
 from typing import List, Any, Iterable
 
+from sklearn import svm, feature_selection
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
-from sklearn.feature_selection import SelectPercentile
-from sklearn.feature_selection import f_classif
+from sklearn.feature_selection import SelectFromModel, SelectPercentile, f_classif, VarianceThreshold
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC
 
 from models import Prediction
 from models import UserClass
@@ -13,41 +17,56 @@ from research.features_loading import FeaturesLoader
 
 
 class Classifier:
-    _dumping_filename = 'model_dump/model'
+    _clf_dump_filename = 'model_dump/classifier'
+    _sel_dump_filename = 'model_dump/selector'
 
     def __init__(self, model=None):
-        self.classifier = RandomForestClassifier()
-        self.selector = SelectPercentile(score_func=f_classif, percentile=10)
+        # classifiers
+        self.classifier = RandomForestClassifier(n_jobs=2)
+        # self.classifier = svm.SVC()
 
+        # selectors
+        self.selector = SelectPercentile(score_func=f_classif, percentile=10)
         # threshold = .8
         # self.selector = VarianceThreshold(threshold=(threshold * (1 - threshold)))
+        # self.selector = SelectKBest(score_func=chi2, k=10)
+
+    # def extract_features(self, features: List[UserFeatures])-> List[UserFeatures]:
+    #     x, y = self._features_to_xy(features)
+    #
+    #     # TODO: implement creating new list of features
+    #     features_values = self.selector.fit(x, y)
+    #
+    #     return features
 
     def study_model(self, features: List[UserFeatures]=None, from_file: bool=False):
         if from_file:
-            if os.path.exists(self._dumping_filename):
-                self.classifier = joblib.load(self._dumping_filename)
+            if os.path.exists(self._clf_dump_filename) and os.path.exists(self._sel_dump_filename):
+                self.classifier = joblib.load(self._clf_dump_filename)
+                self.selector = joblib.load(self._sel_dump_filename)
                 return
 
             else:
-                print('Warning: file %s does not exists. Training model from scratch...' % self._dumping_filename)
+                print('Warning: file %s or %s is missed. Training model from scratch...' %
+                      (self._clf_dump_filename, self._sel_dump_filename))
 
         x, y = self._features_to_xy(features)
+
+        self.selector.fit(x, y)
+
+        x = self.selector.transform(x)
 
         self.classifier.fit(x, y)
 
         # save new model to file
         self.save_model()
-        print('Trained model saved to %s' % self._dumping_filename)
-
-    def extract_features(self, x: List[List[Any]], y: List[Any])-> List[Any]:
-        valuable_features = self.selector.fit_transform(x, y)
-
-        return valuable_features
 
     def predict(self, features: List[UserFeatures])-> List[UserClass]:
         x = self._features_to_x(features)
 
-        predicted = self.classifier.predict(x)
+        useful_features = self.selector.transform(x)
+
+        predicted = self.classifier.predict(useful_features)
 
         return [UserClass(features[index].user_id, gender_value)
                 for index, gender_value in enumerate(predicted)]
@@ -71,7 +90,11 @@ class Classifier:
         return [UserFeatures(_class, _features) for _features, _class in zip(x, y)]
 
     def save_model(self):
-        joblib.dump(self.classifier, self._dumping_filename)
+        joblib.dump(self.classifier, self._clf_dump_filename)
+        joblib.dump(self.selector, self._sel_dump_filename)
+
+        print('Trained model saved to %s' % self._clf_dump_filename)
+        print('Trained selector saved to %s' % self._sel_dump_filename)
 
 
 def main():
@@ -82,14 +105,18 @@ def main():
 
     classifier = Classifier()
 
-    # get features of user with known and unknown genders
+    # get features of users with known and unknown genders
     known, unknown = f_loader.get_all_users_features()
 
+    # extract useful features
+    # known = classifier.extract_features(known)
+
     # define features for studying and for prediction
-    for_study, for_prediction = known[:-5], known[-10:]
+    predict_count = -1000
+    for_study, for_prediction = known[:predict_count], known[predict_count:]
 
     # study model
-    classifier.study_model(features=for_study, from_file=True)
+    classifier.study_model(features=for_study, from_file=False)
 
     # predict classes and create Prediction objects
     predicted_classes = classifier.predict(for_prediction)
