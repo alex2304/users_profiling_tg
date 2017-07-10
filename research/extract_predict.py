@@ -126,7 +126,7 @@ def main():
     f_loader.save_predicted_genders(predictions)
 
     # display statistics
-    correct_predictions = 0
+    correct_predictions, false_1, false_0 = 0, 0, 0
     for number, p in enumerate(predictions, 1):
         print('%d) Real: %s; Predicted: %s; RESULT: %s' % (number,
                                                            str(p.real_class()),
@@ -134,10 +134,19 @@ def main():
                                                            str(p.is_right()).upper()))
         if p.is_right():
             correct_predictions += 1
+        else:
+            if p.predicted_class() == 0:
+                false_0 += 1
+            elif p.predicted_class() == 1:
+                false_1 += 1
+            else:
+                raise NotImplementedError()
 
     print('\n\nCorrect predictions: %d%% (%d out of %d)' % (correct_predictions * 100 / len(predictions),
                                                             correct_predictions,
                                                             len(predictions)))
+
+    print('False predictions of 0s: %d\nFalse predictions of 1s: %d' % (false_0, false_1))
 
 if __name__ == '__main__':
     main()

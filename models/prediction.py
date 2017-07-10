@@ -27,6 +27,7 @@ class UserFeatures:
         self._class = _class
 
 
+# for ability to order objects of the class
 @functools.total_ordering
 class Features:
     def __init__(self, *features):
