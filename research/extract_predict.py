@@ -4,10 +4,11 @@ from typing import List, Any, Iterable
 from sklearn import svm, feature_selection
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
-from sklearn.feature_selection import SelectFromModel, SelectPercentile, f_classif, VarianceThreshold, RFE
+from sklearn.feature_selection import SelectFromModel, SelectPercentile, f_classif, VarianceThreshold, RFE, SelectFpr, \
+    SelectFdr, SelectFwe
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 
@@ -21,17 +22,43 @@ class Classifier:
     _clf_dump_filename = 'model_dump/classifier'
     _sel_dump_filename = 'model_dump/selector'
 
-    def __init__(self, model=None):
-        # classifiers
-        self.classifier = RandomForestClassifier(n_jobs=2)
-        # self.classifier = svm.SVC()
+    def __init__(self):
+        # Selectors
 
-        # selectors
-        # threshold = .8
+        # removing features with low variance
+        threshold = .8
         # self.selector = VarianceThreshold(threshold=(threshold * (1 - threshold)))
+
+        # univariate features selection
+        score_func = f_classif
+
+        # remove all except specified percentile or a count with the highest score
+        percentile = 10
+        # self.selector = SelectPercentile(score_func=score_func, percentile=percentile)
+        count = 10
+        # self.selector = SelectKBest(score_func=score_func, k=count)
+
+        # select the pvalues below alpha based on different tests.
+        alpha = 0.05
+        # self.selector = SelectFpr(score_func=score_func, alpha=alpha)   # false positive rate test
+        # self.selector = SelectFdr(score_func=score_func, alpha=alpha)   # false discovery rate test
+        # self.selector = SelectFwe(score_func=score_func, alpha=alpha)   # family-wise error rate test
+
+        # wrapped method (recursive features elimination)
         self.selector = RFE(estimator=LinearRegression(), n_features_to_select=10)
-        # self.selector = SelectPercentile(score_func=f_classif, percentile=10)
-        # self.selector = SelectKBest(score_func=chi2, k=10)
+
+        # Classifiers
+
+        n_jobs = 2
+        self.classifier = RandomForestClassifier(n_jobs=n_jobs)
+        # self.classifier = svm.SVC(n_jobs=n_jobs)
+
+        # Embedded methods
+
+        alpha = 1.0
+        self.selector = None
+        self.classifier = Ridge(alpha=alpha)
+        # self.classifier = Lasso(alpha=alpha)
 
     def study_model(self, features: List[UserFeatures]=None, from_file: bool=False):
         if from_file:
@@ -46,9 +73,11 @@ class Classifier:
 
         x, y = self._features_to_xy(features)
 
-        self.selector.fit(x, y)
+        if self.selector:
+            self.selector.fit(x, y)
+            x = self.selector.transform(x)
 
-        x = self.selector.transform(x)
+            print('Shape after selection: %s' % str(x.shape))
 
         self.classifier.fit(x, y)
 
@@ -58,11 +87,12 @@ class Classifier:
     def predict(self, features: List[UserFeatures])-> List[UserClass]:
         x = self._features_to_x(features)
 
-        useful_features = self.selector.transform(x)
+        if self.selector:
+            x = self.selector.transform(x)
 
-        predicted = self.classifier.predict(useful_features)
+        predicted = self.classifier.predict(x)
 
-        return [UserClass(features[index].user_id, gender_value)
+        return [UserClass(features[index].user_id, max(min(round(gender_value), 1), 0))
                 for index, gender_value in enumerate(predicted)]
 
     @staticmethod
@@ -85,10 +115,11 @@ class Classifier:
 
     def save_model(self):
         joblib.dump(self.classifier, self._clf_dump_filename)
-        joblib.dump(self.selector, self._sel_dump_filename)
-
         print('Trained model saved to %s' % self._clf_dump_filename)
-        print('Trained selector saved to %s' % self._sel_dump_filename)
+
+        if self.selector:
+            joblib.dump(self.selector, self._sel_dump_filename)
+            print('Trained selector saved to %s' % self._sel_dump_filename)
 
 
 def main():
@@ -132,7 +163,8 @@ def main():
             elif p.predicted_class() == 1:
                 false_1 += 1
             else:
-                raise NotImplementedError()
+                pass
+#                raise NotImplementedError(p.predicted_class())
 
     print('\n\nCorrect predictions: %d%% (%d out of %d)' % (correct_predictions * 100 / len(predictions),
                                                             correct_predictions,

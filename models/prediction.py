@@ -119,6 +119,8 @@ class UserClass:
             if gender_value == v:
                 return k
 
+        print('Warning: unknown gender letter for value %s. Marked as unknown gender.' % str(gender_value))
+
         return 'u'
 
     def __init__(self, user_id, gender):
