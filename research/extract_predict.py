@@ -4,9 +4,10 @@ from typing import List, Any, Iterable
 from sklearn import svm, feature_selection
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
-from sklearn.feature_selection import SelectFromModel, SelectPercentile, f_classif, VarianceThreshold
+from sklearn.feature_selection import SelectFromModel, SelectPercentile, f_classif, VarianceThreshold, RFE
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
+from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 
@@ -26,18 +27,11 @@ class Classifier:
         # self.classifier = svm.SVC()
 
         # selectors
-        self.selector = SelectPercentile(score_func=f_classif, percentile=10)
         # threshold = .8
         # self.selector = VarianceThreshold(threshold=(threshold * (1 - threshold)))
+        self.selector = RFE(estimator=LinearRegression(), n_features_to_select=10)
+        # self.selector = SelectPercentile(score_func=f_classif, percentile=10)
         # self.selector = SelectKBest(score_func=chi2, k=10)
-
-    # def extract_features(self, features: List[UserFeatures])-> List[UserFeatures]:
-    #     x, y = self._features_to_xy(features)
-    #
-    #     # TODO: implement creating new list of features
-    #     features_values = self.selector.fit(x, y)
-    #
-    #     return features
 
     def study_model(self, features: List[UserFeatures]=None, from_file: bool=False):
         if from_file:
@@ -108,12 +102,10 @@ def main():
     # get features of users with known and unknown genders
     known, unknown = f_loader.get_all_users_features()
 
-    # extract useful features
-    # known = classifier.extract_features(known)
-
     # define features for studying and for prediction
     predict_count = -1000
     for_study, for_prediction = known[:predict_count], known[predict_count:]
+    # for_prediction = unknown
 
     # study model
     classifier.study_model(features=for_study, from_file=False)

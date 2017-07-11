@@ -1,7 +1,9 @@
+import os
 import pickle
 import re
 from abc import abstractmethod
 from datetime import datetime
+from typing import List
 
 __all__ = ["BaseEntity", "User", "Chat", "Message", "Bot", "UserInBot", "FoodOrder", "BusClick", "PlacedAd"]
 
@@ -42,12 +44,52 @@ class BaseEntity:
         pass
 
 
+class NamesLoader:
+    _names_path = os.path.join(os.path.dirname(__file__), 'names')
+    _m_filepath, _f_filepath = os.path.join(_names_path, 'males.txt'), os.path.join(_names_path, 'females.txt')
+
+    @classmethod
+    def _update_names(cls, m, f):
+        # remove duplicates
+        m, f = list(set(m)), list(set(f))
+
+        # return sorted
+        return sorted(m), sorted(f)
+
+    @classmethod
+    def get_m_f_names(cls):
+        with open(cls._m_filepath, encoding='utf-8') as f:
+            male_names = [name.replace('\n', '').lower().replace('ё', 'е') for name in f if name]
+
+        with open(cls._f_filepath, encoding='utf-8') as f:
+            female_names = [name.replace('\n', '').lower().replace('ё', 'е') for name in f if name]
+
+        # return updated
+        return cls.update_and_save(male_names, female_names)
+
+    @classmethod
+    def update_and_save(cls, m: List[str], f: List[str]):
+        m_names, f_names = cls._update_names(m, f)
+
+        with open(cls._m_filepath, encoding='utf-8', mode='w') as f:
+            for n in m_names:
+                f.write(n)
+                f.write('\n')
+
+        with open(cls._f_filepath, encoding='utf-8',  mode='w') as f:
+            for n in f_names:
+                f.write(n)
+                f.write('\n')
+
+        # return updated
+        return m_names, f_names
+
+
 class User(BaseEntity):
     _name_pattern = re.compile('[a-zA-Zа-яА-Я]{3,30}')
-    _names = {
-        'm': ['alex', 'marat', 'adel', 'aidar', 'akhmed', 'albert', 'aleksandr', 'aleksander' 'aleksey', 'aleksei', 'alex', 'alexey', 'andrew', 'andrey', 'nikita', 'sergey', 'andrey', 'dmitry', 'timur', 'anton', 'ivan', 'marat', 'ilya', 'maxim', 'pavel', 'ruslan', 'denis', 'bulat', 'igor', 'konstantin', 'aleksandr', 'николай', 'константин', 'artem', 'roman', 'oleg', 'евгений', 'kirill', 'ildar', 'artur', 'vladimir', 'azat', 'артур', 'михаил', 'mikhail', 'albert', 'альберт', 'yuriy', 'иван', 'rustam', 'arthur', 'вадим', 'aidar', 'danil', 'emil', 'ильнур', 'dmitriy', 'damir', 'роман', 'sergei', 'mike', 'bogdan', 'vlad', 'kamil', 'ildar', 'iskander', 'григорий', 'denis', 'денис', 'айдар', 'алексей', 'александр', 'андрей', 'vadim', 'evgeniy', 'сергей', 'максим', 'илья', 'айрат', 'ильдар', 'руслан', 'никита', 'vitaliy', 'булат', 'victor', 'lev', 'rafel', 'yuri', 'maksim', 'evgeny', 'павел', 'artyom', 'ayrat', 'rafael', 'виктор', 'boris', 'dinar', 'marsel', 'renat', 'timofey', 'vyacheslav', 'виталий', 'владимир', 'динар', 'камиль', 'кирилл', 'alisher', 'amir', 'azamat', 'daniel', 'daniil', 'dmitrii', 'eduard', 'fanis', 'farid', 'george', 'gosha', 'ilgiz', 'ilnaz', 'misha', 'mihail', 'анатолий', 'арсений', 'alexander', 'rinat', 'ramil', 'nikolay', 'дмитрий', 'aleksey', 'alexandr', 'vladislav', 'антон', 'марат', 'aydar', 'rishat', 'egor', 'gleb', 'yaroslav', 'leonid', 'азат', 'игорь', 'тимур', 'юрий', 'niyaz', 'ринат', 'ленар', 'andrei', 'влад', 'владислав', 'grigory', 'stanislav', 'semyon', 'anatoly', 'эдуард', 'ilshat', 'stepan'],
-        'f': ['александра', 'лилия', 'aida', 'aigul', 'ainur', 'svetlana', 'albina', 'alena', 'alenka', 'alexandra', 'anastasia', 'anna', 'ekaterina', 'татьяна', 'svetlana', 'irina', 'ирина', 'светлана', 'marina', 'elena', 'diana', 'tatyana', 'ольга', 'maria', 'мария', 'анастасия', 'юлия', 'наталья', 'daria', 'дарья', 'julia', 'alena', 'алёна', 'alina', 'алсу', 'айгуль', 'liliya', 'оксана', 'inna', 'alisa', 'ирина', 'наталья', 'наталия', 'алия', 'диляра', 'dilyara', 'natalia', 'tanya', 'eugene', 'lena', 'regina', 'kate', 'katya', 'aigul', 'vera', 'veronika', 'regina', 'регина', 'вероника', 'tatiana', 'марина', 'dasha', 'гузель', 'диана', 'oksana', 'darya', 'gulnara', 'margarita', 'anastasiia', 'елена', 'алина', 'aliya', 'alsu', 'luiza', 'liana', 'angelina', 'albina', 'катерина', 'victoriya', 'ksenia', 'gulnaz', 'natali', 'natalya', 'nadezhda', 'альбина', 'aliia', 'aygul', 'darina', 'dina', 'elvina', 'evgenia', 'karina', 'katia', 'kristina', 'liya', 'mira', 'nailya', 'sveta', 'victoria', 'алена', 'алёна', 'гульназ', 'гульнара', 'земфира', 'катя', 'ксения', 'анна', 'екатерина', 'elvira', 'olga', 'mariya', 'lily', 'elmira', 'эльвира', 'olesya', 'rezeda', 'евгения', 'лейсан', 'лариса', 'людмила', 'виктория', 'natalie']
-    }
+
+    # load names from files
+    _names = dict(zip(('m', 'f'), NamesLoader.get_m_f_names()))
 
     def __init__(self, uid: int, first_name: str, last_name: str=None, username: str=None, **other):
         super().__init__()
@@ -57,19 +99,21 @@ class User(BaseEntity):
         self.username = username
 
     def get_gender(self):
-        name_str = ' '.join([self.first_name or '', self.last_name or '', self.username or ''])
+        name_str = ' '.join([self.first_name or '', self.last_name or '', self.username or '']).replace('ё', 'е')
 
-        for name_part in name_str.split(' '):
+        names_parts = re.findall(self._name_pattern, name_str)
+
+        for name_part in names_parts:
             if re.match(self._name_pattern, name_part):
                 lower_name = name_part.lower()
+
                 if lower_name in self._names['m']:
                     return 'm'
 
                 elif lower_name in self._names['f']:
                     return 'f'
 
-                else:
-                    return 'u'
+        return 'u'
 
     def __eq__(self, other):
         return other.uid == self.uid
@@ -188,3 +232,6 @@ class PlacedAd(BaseEntity):
 
     def __hash__(self):
         return hash(str(self.user_id) + str(self.placed_timestamp) + str(self.ad_type) + str(self.category_title))
+
+if __name__ == '__main__':
+    NamesLoader.update_and_save(**User._names)

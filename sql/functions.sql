@@ -186,10 +186,10 @@ SELECT COUNT(*) FROM users_genders g
 WHERE gender = 'u';
 
 -- check which users have undefined gender
-SELECT COUNT(*), u.first_name as f_name FROM users_genders g
+SELECT COUNT(*), u.first_name as f_name, u.last_name as l_name FROM users_genders g
   INNER JOIN users u ON u.local_id = g.user_id
 WHERE gender = 'u'
-GROUP BY u.first_name;
+GROUP BY u.first_name, u.last_name;
 
 -- check results of the last gender prediction
 SELECT first_name, last_name, username, real_gender, predicted_gender FROM predicted_genders p_g

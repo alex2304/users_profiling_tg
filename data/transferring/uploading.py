@@ -236,3 +236,7 @@ class DataUploader:
 
         for p in predictions:
             self._insert_predicted_gender(p.user_id(), p.real_class(), p.predicted_class())
+
+if __name__ == '__main__':
+    d = DataUploader()
+    d.upload_users_genders()
