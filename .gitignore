@@ -4,4 +4,5 @@
 data/transferring/raw_data/*
 telegram/sessions/*.session
 research/model_dump/*
+research/results/*
 distributions/*
