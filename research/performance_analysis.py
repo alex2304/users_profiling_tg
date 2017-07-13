@@ -4,7 +4,7 @@ from typing import List
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering, KMeans
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import VarianceThreshold, SelectPercentile, SelectKBest, SelectFpr, SelectFdr, \
-    SelectFwe, RFE, f_classif
+    SelectFwe, RFE, f_classif, chi2
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.svm import LinearSVC, SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -30,13 +30,13 @@ class Experiment:
     ]
 
     # Selectors
-    variance_threshold = .5
-    score_func = f_classif
-    best_percentile = 25
-    best_count = 25
+    variance_threshold = .7
+    score_func = chi2
+    best_percentile = 30
+    best_count = 30
     tests_alpha = 0.1
     rfe_estimator = LinearRegression()
-    rfe_features_number = 8
+    rfe_features_number = 12
 
     selectors = [
         VarianceThreshold(threshold=(variance_threshold * (1 - variance_threshold))),
@@ -66,6 +66,10 @@ class Experiment:
         Lasso(alpha=embedded_alpha)
     ]
 
+    run_selectors = True
+    run_classifiers = True
+    run_embedded = True
+
     @classmethod
     def _get_statistic(cls, predictions: List[Prediction]):
         # display statistics
@@ -94,7 +98,7 @@ class Experiment:
         mode = 'a' if os.path.exists(cls._report_file_path) else 'w'
 
         with open(cls._report_file_path, mode, encoding='utf-8') as f:
-            f.write('%s %s ' % (type(classifier).__name__, type(selector).__name__))
+            f.write('%s %s ' % (type(classifier).__name__, type(selector).__name__ if selector else '<Without Selector>'))
 
             correct_predictions, true_0, true_1, false_0, false_1 = cls._get_statistic(predictions)
 
@@ -148,12 +152,8 @@ if __name__ == '__main__':
 
     print('Experiment started')
 
-    selectors = False
-    classifiers = False
-    embedded = True
-
     # classifiers with selectors
-    if selectors:
+    if Experiment.run_selectors:
         for c in Experiment.classifiers:
             for s in Experiment.selectors:
                 predictor = Predictor(c, s)
@@ -162,7 +162,7 @@ if __name__ == '__main__':
                 Experiment.log_classifying_result(c, s, predictor.predict(for_prediction))
 
     # classifiers without selectors
-    if classifiers:
+    if Experiment.run_classifiers:
         for c in Experiment.classifiers:
             predictor = Predictor(classifier=c)
             predictor.study_model(for_study)
@@ -170,7 +170,7 @@ if __name__ == '__main__':
             Experiment.log_classifying_result(classifier=c, selector=None, predictions=predictor.predict(for_prediction))
 
     # embedded methods
-    if embedded:
+    if Experiment.run_embedded:
         for c in Experiment.embedded:
             predictor = Predictor(classifier=c)
             predictor.study_model(for_study)
