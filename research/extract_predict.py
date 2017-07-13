@@ -12,7 +12,13 @@ class Predictor:
     _clf_dump_filename = 'model_dump/classifier'
     _sel_dump_filename = 'model_dump/selector'
 
-    def __init__(self, classifier=None, selector=None, clustering=None):
+    def _debug(self, _msg):
+        if self.debug:
+            print(_msg)
+
+    def __init__(self, classifier=None, selector=None, clustering=None, debug=False):
+        self.debug = debug
+
         # for correct converting results of embedded methods
         if isinstance(classifier, (Ridge, Lasso)):
             self.embedded = True
@@ -48,11 +54,12 @@ class Predictor:
         x, y = self._features_to_xy(known_features)
 
         if self.selector:
-            # print('Selector: %s' % type(self.selector))
+            self._debug('Selector: %s' % type(self.selector).__name__)
+
             self.selector.fit(x, y)
             x = self.selector.transform(x)
 
-            # print('Shape after selection: %s' % str(x.shape))
+            self._debug('Shape after selection: %s' % str(x.shape))
 
         self.classifier.fit(x, y)
 
@@ -69,7 +76,7 @@ class Predictor:
         if self.selector:
             x = self.selector.transform(x)
 
-        # print('Classifier: %s' % type(self.classifier))
+        self._debug('Classifier: %s' % type(self.classifier).__name__)
 
         predicted = self.classifier.predict(x)
 
@@ -92,7 +99,7 @@ class Predictor:
             else:
                 x = self.selector.transform(x)
 
-        # print('Clustering: %s' % type(self.clustering))
+        self._debug('Clustering: %s' % type(self.clustering).__name__)
 
         clustered = self.clustering.fit_predict(x)
 
@@ -124,8 +131,8 @@ class Predictor:
 
     def _save_model(self):
         joblib.dump(self.classifier, self._clf_dump_filename)
-        print('Trained model saved to %s' % self._clf_dump_filename)
+        self._debug('Trained model saved to %s' % self._clf_dump_filename)
 
         if self.selector:
             joblib.dump(self.selector, self._sel_dump_filename)
-            print('Trained selector saved to %s' % self._sel_dump_filename)
+            self._debug('Trained selector saved to %s' % self._sel_dump_filename)
