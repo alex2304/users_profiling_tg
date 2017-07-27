@@ -194,3 +194,5 @@ GROUP BY u.first_name, u.last_name;
 -- check results of the last gender prediction
 SELECT first_name, last_name, username, real_gender, predicted_gender FROM predicted_genders p_g
 INNER JOIN users u ON u.local_id = p_g.user_id;
+
+SELECT count(DISTINCT(food_item)) FROM food_orders

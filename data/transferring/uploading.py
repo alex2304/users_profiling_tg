@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union, Any, Generator, Iterable
 
 import postgresql
 from postgresql.exceptions import Error
@@ -184,40 +184,50 @@ class DataUploader:
             print(e)
             raise Exception('Error clearing table %s' % table_title)
 
+    # noinspection PyPep8Naming
+    def get_entities(self, table_title, schema, Type) -> Iterable[Any]:
+        """
+        Query "SELECT * FROM table_title" and return entities of Type, mapped to the given schema
+        """
+        tuples = self.db.query('SELECT * FROM %s' % table_title)
+
+        return [Type(**dict(zip(schema, t))) for t in tuples]
+
     def get_users_in_chats(self):
         schema = 'chat_id', 'user_id', 'entering_difference', 'avg_msg_frequency', 'avg_msg_length'
-        tuples = self.db.query('SELECT * FROM users_in_chats')
 
-        return [UserInChat(**dict(zip(schema, t))) for t in tuples]
+        return self.get_entities('users_in_chats', schema, UserInChat)
 
     def get_users_in_bots(self):
         schema = 'bot_title', 'user_id', 'lang'
-        tuples = self.db.query('SELECT * FROM users_in_bots')
 
-        for t in tuples:
-            yield UserInBot(**dict(zip(schema, t)))
+        return self.get_entities('users_in_bots', schema, UserInBot)
 
     def get_chats(self):
         schema = 'cid', 'title', 'members_count', 'messages_count', 'creation_date'
-        tuples = self.db.query('SELECT * FROM chats')
 
-        for t in tuples:
-            yield Chat(**dict(zip(schema, t)))
+        return self.get_entities('chats', schema, Chat)
 
     def get_users(self):
         # miss 'tg_id' field
         schema = 'uid', 'tg_id', 'first_name', 'last_name', 'username'
-        tuples = self.db.query('SELECT * FROM users')
 
-        for t in tuples:
-            yield User(**dict(zip(schema, t)))
+        return self.get_entities('users', schema, User)
 
     def get_bots(self):
         schema = 'title', 'members_count'
-        tuples = self.db.query('SELECT * FROM bots')
 
-        for t in tuples:
-            yield Bot(**dict(zip(schema, t)))
+        return self.get_entities('bots', schema, Bot)
+
+    def get_food_orders(self):
+        schema = 'order_id', 'user_id', 'food_category', 'food_item', 'quantity', 'timestamp'
+
+        return self.get_entities('food_orders', schema, FoodOrder)
+
+    def get_placed_ads(self):
+        schema = 'ad_id', 'user_id', 'food_category', 'food_item', 'quantity', 'timestamp'
+
+        return self.get_entities('food_orders', schema, FoodOrder)
 
     def upload_users_genders(self):
         self.db.execute('DELETE FROM users_genders *;')
@@ -226,7 +236,10 @@ class DataUploader:
         for user in users:
             self._insert_user_gender(user.uid, user.get_gender())
 
-    def get_user_genders(self):
+    def get_users_genders(self):
+        """
+        Dict[User id, User Gender]
+        """
         tuples = self.db.query('SELECT * FROM users_genders')
 
         return {t[0]: t[1] for t in tuples}

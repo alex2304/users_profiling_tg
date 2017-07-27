@@ -1,7 +1,5 @@
 import functools
 
-import math
-
 
 class UserFeatures:
     def __init__(self, user_id, _class, *features):
@@ -27,7 +25,7 @@ class UserFeatures:
         self._class = _class
 
 
-# for ability to order objects of the class
+# for an ability to order objects of the class
 @functools.total_ordering
 class Features:
     def __init__(self, *features):
@@ -39,44 +37,61 @@ class Features:
         2) If chats: compare chat_id
         3) If bots: compare bot_title
         """
-        if isinstance(self, FeaturesFromChat):
-            if isinstance(other, FeaturesFromChat):
+        self_class, other_class = self.__class__.__name__, other.__class__.__name__
+
+        # instances of the same class
+        if self_class == other_class:
+            if isinstance(self, FeaturesFromChat):
                 return 1 if self.chat_id > other.chat_id else -1
 
-            elif isinstance(other, FeaturesFromBot):
-                return 1
-
-        elif isinstance(self, FeaturesFromBot):
-            if isinstance(other, FeaturesFromBot):
+            elif isinstance(self, FeaturesFromBot):
                 return 1 if self.bot_title > other.bot_title else -1
 
-            elif isinstance(other, FeaturesFromChat):
-                return 0
+            else:
+                raise NotImplementedError('Not implemented comparison of features for the class %s ' % self_class)
+
+        # instances of different classes
+        else:
+            # sort by class names
+            return 1 if self_class > other_class else -1
 
     def to_values_list(self):
         return self.features
 
     def __eq__(self, other):
-        if isinstance(self, FeaturesFromChat) and isinstance(other, FeaturesFromChat):
-            return self.chat_id == other.chat_id
+        self_class, other_class = self.__class__.__name__, other.__class__.__name__
 
-        elif isinstance(self, FeaturesFromBot) and isinstance(other, FeaturesFromBot):
-            return self.bot_title == other.bot_title
+        if self_class == other_class:
+            if isinstance(self, FeaturesFromChat):
+                return self.chat_id == other.chat_id
+
+            elif isinstance(self, FeaturesFromBot):
+                return self.bot_title == other.bot_title
+
+            else:
+                raise NotImplementedError('Not implemented equality op. of features for the class %s ' % self_class)
+
+        else:
+            return False
 
     def __gt__(self, other):
-        if isinstance(self, FeaturesFromChat):
-            if isinstance(other, FeaturesFromChat):
+        self_class, other_class = self.__class__.__name__, other.__class__.__name__
+
+        if self_class == other_class:
+            if isinstance(self, FeaturesFromChat):
                 return self.chat_id > other.chat_id
 
-            elif isinstance(other, FeaturesFromBot):
-                return True
-
-        elif isinstance(self, FeaturesFromBot):
-            if isinstance(other, FeaturesFromBot):
+            elif isinstance(self, FeaturesFromBot):
                 return self.bot_title > other.bot_title
 
-            elif isinstance(other, FeaturesFromChat):
-                return False
+            else:
+                raise NotImplementedError('Not implemented greater op. of features for the class %s ' % self_class)
+
+        else:
+            return self_class > other_class
+
+    def __hash__(self):
+        return hash(self.features)
 
 
 class FeaturesFromChat(Features):

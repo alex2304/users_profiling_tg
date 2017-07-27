@@ -184,7 +184,7 @@ class UserInBot(BaseEntity):
 
 
 class FoodOrder(BaseEntity):
-    def __init__(self, user_id: int, food_category: str, food_item: str, quantity: int, timestamp: datetime):
+    def __init__(self, user_id: int, food_category: str, food_item: str, quantity: int, timestamp: datetime, **other):
         super().__init__()
         self.user_id = user_id
         self.food_category = food_category

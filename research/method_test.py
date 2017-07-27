@@ -1,5 +1,3 @@
-
-# test a single method
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import VarianceThreshold
 
@@ -18,7 +16,7 @@ if __name__ == '__main__':
     for_study, for_prediction = known[:predict_count], known[predict_count:]
 
     c = RandomForestClassifier()
-    threshold = 0.
+    threshold = 0.8
     s = VarianceThreshold(threshold=threshold*(1-threshold))
 
     predictor = Predictor(c, s, debug=True)
