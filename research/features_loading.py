@@ -33,7 +33,7 @@ class FeaturesLoader(DataUploader):
 
             if users_features.get(uid) is None:
                 users_features[uid] = set()
-                print('Warning: user with uid %d was absent; added. (Chats features selection) ' % uid)
+                print('Warning: user with uid %d was absent; added. (Chats features extraction) ' % uid)
 
             users_features[uid].add(FeaturesFromChat(chat_id, participation=1,
                                                      freq=freq, length=length, diff=diff))
@@ -46,7 +46,7 @@ class FeaturesLoader(DataUploader):
 
             if users_features.get(uid) is None:
                 users_features[uid] = set()
-                print('Warning: user with uid %d was absent; added. (Bots features selection) ' % uid)
+                print('Warning: user with uid %d was absent; added. (Bots features extraction) ' % uid)
 
             users_features[uid].add(FeaturesFromBot(bot_title, participation=1, language=lang))
 
@@ -83,6 +83,7 @@ class FeaturesLoader(DataUploader):
 
             if not ordered_items_count.get(order.user_id):
                 ordered_items_count[order.user_id] = {food_item: 0 for food_item in all_food_items}
+                print('Warning: user with uid %d was absent; added. (Food orders features extraction) ' % order.user_id)
 
             # increase count of ordered food item by quantity value
             ordered_items_count[order.user_id][order.food_item] += order.quantity
@@ -94,7 +95,7 @@ class FeaturesLoader(DataUploader):
         for uid, orders_count in ordered_items_count.items():
             if users_features.get(uid) is None:
                 users_features[uid] = set()
-                print('Warning: user with uid %d was absent; added. (Food orders features selection) ' % uid)
+                print('Warning: user with uid %d was absent; added. (Food orders features extraction) ' % uid)
 
             features = []
 
@@ -115,41 +116,38 @@ class FeaturesLoader(DataUploader):
         users = self.get_users()
         placed_ads = self.get_placed_ads()
 
-        # create set of all the food items
-        all_food_items = {order.food_item for order in food_orders if order.food_item}
+        # create set of all the ads categories (category title + ad type)
+        all_categories = {placed_ad.category_title + placed_ad.ad_type for placed_ad in placed_ads}
 
-        # create dict of users ids and their food orders count (for each food item)
-        ordered_items_count = {u.uid: {food_item: 0
-                                       for food_item in all_food_items}
-                               for u in users}
+        # create dict of users ids and count of their ads in each category
+        placed_ads_count = {u.uid: {category: 0
+                                    for category in all_categories}
+                            for u in users}
 
-        # count number of orders of each food item by each user
-        for order in food_orders:
-            # omit orders with unknown food items
-            if not order.food_item:
-                continue
+        # count number of placed ads in each ads categories by each user
+        for ad in placed_ads:
+            if not placed_ads_count.get(ad.user_id):
+                placed_ads_count[ad.user_id] = {category: 0 for category in all_categories}
+                print('Warning: user with uid %d was absent; added. (Placed ads features extraction) ' % ad.user_id)
 
-            if not ordered_items_count.get(order.user_id):
-                ordered_items_count[order.user_id] = {food_item: 0 for food_item in all_food_items}
-
-            # increase count of ordered food item by quantity value
-            ordered_items_count[order.user_id][order.food_item] += order.quantity
+            # increase count of placed ads in the category by 1
+            placed_ads_count[ad.user_id][ad.category_title + ad.ad_type] += 1
 
         # if passed user features dict is None - create it from scratch
         users_features = existed_users_features or {u.uid: set() for u in users}
 
-        # convert orders counts to features list
-        for uid, orders_count in ordered_items_count.items():
+        # convert placed ads to features list
+        for uid, ads_count in placed_ads_count.items():
             if users_features.get(uid) is None:
                 users_features[uid] = set()
-                print('Warning: user with uid %d was absent; added. (Food orders features selection) ' % uid)
+                print('Warning: user with uid %d was absent; added. (Placed ads features extraction) ' % uid)
 
             features = []
 
-            # create list of features (sort food items by titles)
-            for food_item in sorted(orders_count.keys()):
-                # each feature - number of orders of an item
-                features.append(orders_count[food_item])
+            # create list of features (sort categories by titles)
+            for category in sorted(ads_count.keys()):
+                # each feature - number of
+                features.append(ads_count[category])
 
             # add features to the user's features
             users_features[uid].add(Features(*features))
@@ -165,7 +163,7 @@ class FeaturesLoader(DataUploader):
         # get all kinds of features
         users_features = self._get_chats_bots_features()
         users_features = self._get_food_orders_features(existed_users_features=users_features)
-        # users_features = self._get_placed_ads_features(existed_users_features=users_features)
+        users_features = self._get_placed_ads_features(existed_users_features=users_features)
 
         # get classes of users
         users_genders = self.get_users_genders()

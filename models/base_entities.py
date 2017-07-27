@@ -218,7 +218,7 @@ class BusClick(BaseEntity):
 
 class PlacedAd(BaseEntity):
     def __init__(self, user_id: int, placed_timestamp: datetime, category_title: str, ad_type: str,
-                 views_count: int, likes_count: int):
+                 views_count: int, likes_count: int, **other):
         super().__init__()
         self.user_id = user_id
         self.ad_type = ad_type

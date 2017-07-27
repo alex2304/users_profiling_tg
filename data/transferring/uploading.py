@@ -220,14 +220,16 @@ class DataUploader:
         return self.get_entities('bots', schema, Bot)
 
     def get_food_orders(self):
+        # omit order_id
         schema = 'order_id', 'user_id', 'food_category', 'food_item', 'quantity', 'timestamp'
 
         return self.get_entities('food_orders', schema, FoodOrder)
 
     def get_placed_ads(self):
-        schema = 'ad_id', 'user_id', 'food_category', 'food_item', 'quantity', 'timestamp'
+        # omit ad_id
+        schema = 'ad_id', 'user_id', 'placed_timestamp', 'category_title', 'ad_type', 'views_count', 'likes_count'
 
-        return self.get_entities('food_orders', schema, FoodOrder)
+        return self.get_entities('placed_ads', schema, PlacedAd)
 
     def upload_users_genders(self):
         self.db.execute('DELETE FROM users_genders *;')

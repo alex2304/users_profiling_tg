@@ -47,6 +47,9 @@ class Features:
             elif isinstance(self, FeaturesFromBot):
                 return 1 if self.bot_title > other.bot_title else -1
 
+            elif isinstance(self, Features):
+                return 1 if len(self.features) > len(other.features) else -1
+
             else:
                 raise NotImplementedError('Not implemented comparison of features for the class %s ' % self_class)
 
@@ -68,6 +71,9 @@ class Features:
             elif isinstance(self, FeaturesFromBot):
                 return self.bot_title == other.bot_title
 
+            elif isinstance(self, Features):
+                return len(self.features) == len(other.features)
+
             else:
                 raise NotImplementedError('Not implemented equality op. of features for the class %s ' % self_class)
 
@@ -83,6 +89,9 @@ class Features:
 
             elif isinstance(self, FeaturesFromBot):
                 return self.bot_title > other.bot_title
+
+            elif isinstance(self, Features):
+                return len(self.features) > len(other.features)
 
             else:
                 raise NotImplementedError('Not implemented greater op. of features for the class %s ' % self_class)
