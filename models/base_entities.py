@@ -10,8 +10,8 @@ __all__ = ["BaseEntity", "User", "Chat", "Message", "Bot", "UserInBot", "FoodOrd
 
 class BaseEntity:
 
-    def __init__(self):
-        self.__dict__ = {}
+    def __init__(self, **kwargs):
+        self.__dict__ = kwargs
 
     # TODO: add try/except
     def serialize(self):
@@ -92,7 +92,10 @@ class User(BaseEntity):
     _names = dict(zip(('m', 'f'), NamesLoader.get_m_f_names()))
 
     def __init__(self, uid: int, first_name: str, last_name: str=None, username: str=None, **other):
-        super().__init__()
+        self.tg_id = None
+
+        super().__init__(**other)
+
         self.last_name = last_name
         self.first_name = first_name
         self.uid = uid
@@ -123,13 +126,13 @@ class User(BaseEntity):
 
 
 class Chat(BaseEntity):
-    def __init__(self, cid: int, title: str, members_count: int, messages_count: int, creation_date: datetime):
-        super().__init__()
+    def __init__(self, cid: int, title: str, members_count: int, messages_count: int, creation_date: datetime, **other):
+        super().__init__(**other)
+
         self.cid = cid
         self.title = title
         self.members_count = members_count
         self.messages_count = messages_count
-
         self.creation_date = creation_date
 
     def __eq__(self, other):
@@ -140,8 +143,9 @@ class Chat(BaseEntity):
 
 
 class Message(BaseEntity):
-    def __init__(self, msg_id: int, text: str, date: datetime, author_id: int, chat_id: int):
-        super().__init__()
+    def __init__(self, msg_id: int, text: str, date: datetime, author_id: int, chat_id: int, **other):
+        super().__init__(**other)
+
         self.chat_id = chat_id
         self.author_id = author_id
         self.date = date
@@ -156,9 +160,9 @@ class Message(BaseEntity):
 
 
 class Bot(BaseEntity):
+    def __init__(self, title: str, members_count: int, **other):
+        super().__init__(**other)
 
-    def __init__(self, title: str, members_count: int):
-        super().__init__()
         self.members_count = members_count
         self.title = title
 
@@ -170,8 +174,9 @@ class Bot(BaseEntity):
 
 
 class UserInBot(BaseEntity):
-    def __init__(self, bot_title: str, user_id: int, lang: str):
-        super().__init__()
+    def __init__(self, bot_title: str, user_id: int, lang: str, **other):
+        super().__init__(**other)
+
         self.lang = lang
         self.user_id = user_id
         self.bot_title = bot_title
@@ -185,7 +190,10 @@ class UserInBot(BaseEntity):
 
 class FoodOrder(BaseEntity):
     def __init__(self, user_id: int, food_category: str, food_item: str, quantity: int, timestamp: datetime, **other):
-        super().__init__()
+        self.order_id = None
+
+        super().__init__(**other)
+
         self.user_id = user_id
         self.food_category = food_category
         self.food_item = food_item
@@ -201,8 +209,11 @@ class FoodOrder(BaseEntity):
 
 class BusClick(BaseEntity):
     def __init__(self, user_id: int, click_timestamp: datetime, route_id: str, shuttle_id: int,
-                 route_start_time: datetime):
-        super().__init__()
+                 route_start_time: datetime, **other):
+        self.click_id = None
+
+        super().__init__(**other)
+
         self.user_id = user_id
         self.click_timestamp = click_timestamp
         self.route_id = route_id
@@ -219,7 +230,10 @@ class BusClick(BaseEntity):
 class PlacedAd(BaseEntity):
     def __init__(self, user_id: int, placed_timestamp: datetime, category_title: str, ad_type: str,
                  views_count: int, likes_count: int, **other):
-        super().__init__()
+        self.ad_id = None
+
+        super().__init__(**other)
+
         self.user_id = user_id
         self.ad_type = ad_type
         self.category_title = category_title

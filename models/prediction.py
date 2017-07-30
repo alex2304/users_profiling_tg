@@ -1,12 +1,11 @@
 import functools
 
 
-class UserFeatures:
-    def __init__(self, user_id, _class, *features):
-        self.user_id = user_id
+class Sample:
+    def __init__(self, _class, *features):
+        self._class = _class
 
         self._features = []
-        self._class = _class
 
         for f in features:
             if isinstance(f, list) or isinstance(f, tuple):
@@ -23,6 +22,21 @@ class UserFeatures:
 
     def set_class(self, _class):
         self._class = _class
+
+
+class MessageSample(Sample):
+    def __init__(self, user_id, message_id, _class, *features):
+        super().__init__(_class, *features)
+
+        self.user_id = user_id
+        self.message_id = message_id
+
+
+class UserSample(Sample):
+    def __init__(self, user_id, _class, *features):
+        super().__init__(_class, *features)
+
+        self.user_id = user_id
 
 
 # for an ability to order objects of the class
@@ -147,6 +161,13 @@ class UserClass:
 
         return 'u'
 
+    @classmethod
+    def resolve_value(cls, gender_letter):
+        if cls._genders.get(gender_letter) is None:
+            raise ValueError('Unknown letter %s' % gender_letter)
+
+        return cls._genders.get(gender_letter)
+
     def __init__(self, user_id, gender):
         self.user_id = user_id
 
@@ -164,12 +185,12 @@ class UserClass:
 
 
 class Prediction:
-    def __init__(self, _class: UserClass, features: UserFeatures):
+    def __init__(self, _class: UserClass, sample: Sample):
         self._class = _class
-        self.features = features
+        self.sample = sample
 
     def real_class(self):
-        return self.features.class_value()
+        return self.sample.class_value()
 
     def predicted_class(self):
         return self._class.gender_value()
@@ -177,5 +198,25 @@ class Prediction:
     def is_right(self):
         return self.predicted_class() == self.real_class()
 
+
+class UserPrediction(Prediction):
+    def __init__(self, _class: UserClass, sample: UserSample):
+        super().__init__(_class, sample)
+
+        self.sample = sample
+
     def user_id(self):
-        return self.features.user_id
+        return self.sample.user_id
+
+
+class MessagePrediction(Prediction):
+    def __init__(self, _class: UserClass, sample: MessageSample):
+        super().__init__(_class, sample)
+
+        self.sample = sample
+
+    def user_id(self):
+        return self.sample.user_id
+
+    def message_id(self):
+        return self.sample.message_id

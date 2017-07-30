@@ -4,14 +4,14 @@ from typing import List
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering, KMeans
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import VarianceThreshold, SelectPercentile, SelectKBest, SelectFpr, SelectFdr, \
-    SelectFwe, RFE, f_classif, chi2
+    SelectFwe, RFE, chi2
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.svm import LinearSVC, SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from models import Prediction
-from research.extract_predict import Predictor
-from research.features_loading import FeaturesLoader
+from models.prediction import Prediction
+from research.features_extraction import FeaturesExtractor
+from research.prediction import Predictor
 
 
 class Experiment:
@@ -135,13 +135,14 @@ class Experiment:
 
 
 if __name__ == '__main__':
-    f_loader = FeaturesLoader()
+    f_loader = FeaturesExtractor()
 
     # update pre-classified info about known user genders
     f_loader.upload_users_genders()
 
     # get features of users with known and unknown genders
-    known, unknown = f_loader.get_all_users_features()
+    # known, unknown = f_loader.get_all_users_features()
+    known, unknown = f_loader.get_messages_features(from_file=False, save_to_file=False)
 
     # define features for studying and for prediction
     predict_count = -1000

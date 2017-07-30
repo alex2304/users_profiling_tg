@@ -3,7 +3,7 @@ from typing import List, Union, Any, Generator, Iterable
 import postgresql
 from postgresql.exceptions import Error
 
-from models import Prediction
+from models import UserPrediction
 from models import User, Chat, Message, ChatsEntities, Bot, UserInBot, FoodOrder, BusClick, PlacedAd, BaseEntity
 from models import UserInChat
 
@@ -185,11 +185,16 @@ class DataUploader:
             raise Exception('Error clearing table %s' % table_title)
 
     # noinspection PyPep8Naming
-    def get_entities(self, table_title, schema, Type) -> Iterable[Any]:
+    def get_entities(self, table_title, schema, Type, where=None) -> Iterable[Any]:
         """
-        Query "SELECT * FROM table_title" and return entities of Type, mapped to the given schema
+        Query "SELECT * FROM table_title WHERE {filter}" and return entities of Type, mapped to the given schema
         """
-        tuples = self.db.query('SELECT * FROM %s' % table_title)
+        q_text = 'SELECT * FROM {table_title}'.format(table_title=table_title)
+
+        if where:
+            q_text += ' WHERE {where}'.format(where=where)
+
+        tuples = self.db.query(q_text)
 
         return [Type(**dict(zip(schema, t))) for t in tuples]
 
@@ -209,7 +214,6 @@ class DataUploader:
         return self.get_entities('chats', schema, Chat)
 
     def get_users(self):
-        # miss 'tg_id' field
         schema = 'uid', 'tg_id', 'first_name', 'last_name', 'username'
 
         return self.get_entities('users', schema, User)
@@ -220,16 +224,30 @@ class DataUploader:
         return self.get_entities('bots', schema, Bot)
 
     def get_food_orders(self):
-        # omit order_id
         schema = 'order_id', 'user_id', 'food_category', 'food_item', 'quantity', 'timestamp'
 
         return self.get_entities('food_orders', schema, FoodOrder)
 
     def get_placed_ads(self):
-        # omit ad_id
         schema = 'ad_id', 'user_id', 'placed_timestamp', 'category_title', 'ad_type', 'views_count', 'likes_count'
 
         return self.get_entities('placed_ads', schema, PlacedAd)
+
+    def get_buses_clicks(self):
+        schema = 'click_id', 'user_id', 'click_timestamp', 'route_id', 'route_start_time', 'shuttle_id'
+
+        return self.get_entities('buses_clicks', schema, BusClick)
+
+    def get_messages(self, uid=None):
+        """
+        If uid is specified - returns messages only of the user with this id, otherwise - all the messages.
+        """
+        schema = 'msg_id', 'text', 'date', 'chat_id', 'author_id'
+
+        if uid:
+            return self.get_entities('messages', schema, Message, where='user_id={uid}'.format(uid=uid))
+
+        return self.get_entities('messages', schema, Message)
 
     def upload_users_genders(self):
         self.db.execute('DELETE FROM users_genders *;')
@@ -246,7 +264,7 @@ class DataUploader:
 
         return {t[0]: t[1] for t in tuples}
 
-    def save_predicted_genders(self, predictions: List[Prediction]):
+    def save_predicted_genders(self, predictions: List[UserPrediction]):
         self.db.execute('DELETE FROM predicted_genders *;')
 
         for p in predictions:
